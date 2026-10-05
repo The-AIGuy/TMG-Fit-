@@ -142,7 +142,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
         <div className="flex items-center justify-between border-b border-[#DDE5DF] dark:border-[#2B322E] pb-4 mb-6">
           <div>
             <p className="text-xs font-medium text-[#3F4944] dark:text-[#C0C9C2]">
-              Step {step} of 4 · Personalising Google Fit Adapt
+              Step {step} of 4 · Personalising TMG-Fit
             </p>
             <h2
               id="onboarding-title"
