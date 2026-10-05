@@ -1,0 +1,6 @@
+{
+  "name": "Google Fit Adapt",
+  "description": "A health-aware, adaptive activity and wellbeing companion designed with Material You that adapts to your real life, energy levels, schedule, and health considerations.",
+  "requestFramePermissions": ["geolocation", "microphone", "camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

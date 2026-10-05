@@ -1,0 +1,291 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Hardened Global Helpers
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidStringArray(arr, maxLen) {
+      return arr is list && arr.size() <= maxLen && (arr.size() == 0 || (arr[0] is string && arr[0].size() <= 150));
+    }
+
+    // 3. Entity Validation Blueprints
+    function isValidUserProfile(data, userId) {
+      return data.keys().hasAll([
+        'uid', 'name', 'preferredUnits', 'indoorOutdoorPreference',
+        'preferredDuration', 'subscriptionTier', 'onboardingCompleted',
+        'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'uid', 'name', 'age', 'preferredUnits', 'locationArea', 'timezone',
+        'goals', 'healthConsiderations', 'equipment', 'favouriteActivities',
+        'dislikedActivities', 'indoorOutdoorPreference', 'musicPreference',
+        'preferredDuration', 'socialPreference', 'learnedPreferences',
+        'allergies', 'foodBudget', 'householdSize', 'subscriptionTier',
+        'onboardingCompleted', 'createdAt', 'updatedAt'
+      ]) &&
+      data.uid is string && data.uid.size() <= 128 && data.uid.matches('^[a-zA-Z0-9_\\-]+$') &&
+      data.uid == request.auth.uid && data.uid == userId &&
+      data.name is string && data.name.size() >= 1 && data.name.size() <= 100 &&
+      (!('age' in data) || (data.age is int && data.age >= 13 && data.age <= 120)) &&
+      data.preferredUnits is string && data.preferredUnits.size() <= 20 && data.preferredUnits in ['metric', 'imperial'] &&
+      (!('locationArea' in data) || (data.locationArea is string && data.locationArea.size() <= 150)) &&
+      (!('timezone' in data) || (data.timezone is string && data.timezone.size() <= 80)) &&
+      (!('goals' in data) || isValidStringArray(data.goals, 10)) &&
+      (!('healthConsiderations' in data) || isValidStringArray(data.healthConsiderations, 10)) &&
+      (!('equipment' in data) || isValidStringArray(data.equipment, 15)) &&
+      (!('favouriteActivities' in data) || isValidStringArray(data.favouriteActivities, 15)) &&
+      (!('dislikedActivities' in data) || isValidStringArray(data.dislikedActivities, 15)) &&
+      data.indoorOutdoorPreference is string && data.indoorOutdoorPreference.size() <= 20 && data.indoorOutdoorPreference in ['indoor', 'outdoor', 'both'] &&
+      (!('musicPreference' in data) || (data.musicPreference is string && data.musicPreference.size() <= 80)) &&
+      data.preferredDuration is int && data.preferredDuration >= 5 && data.preferredDuration <= 180 &&
+      (!('socialPreference' in data) || (data.socialPreference is string && data.socialPreference.size() <= 20 && data.socialPreference in ['solo', 'group', 'family', 'flexible'])) &&
+      (!('learnedPreferences' in data) || isValidStringArray(data.learnedPreferences, 20)) &&
+      (!('allergies' in data) || isValidStringArray(data.allergies, 15)) &&
+      (!('foodBudget' in data) || (data.foodBudget is string && data.foodBudget.size() <= 20 && data.foodBudget in ['low', 'moderate', 'flexible'])) &&
+      (!('householdSize' in data) || (data.householdSize is int && data.householdSize >= 1 && data.householdSize <= 20)) &&
+      data.subscriptionTier is string && data.subscriptionTier.size() <= 20 && data.subscriptionTier in ['free', 'pro', 'pro_plus'] &&
+      data.onboardingCompleted is bool &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    function isValidDailyCheckIn(data, userId) {
+      return data.keys().hasAll([
+        'uid', 'dateKey', 'feeling', 'availableMinutes', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'uid', 'dateKey', 'feeling', 'availableMinutes', 'realLifeFactors',
+        'notes', 'createdAt', 'updatedAt'
+      ]) &&
+      data.uid is string && data.uid.size() <= 128 && data.uid.matches('^[a-zA-Z0-9_\\-]+$') &&
+      data.uid == request.auth.uid && data.uid == userId &&
+      data.dateKey is string && data.dateKey.size() >= 1 && data.dateKey.size() <= 20 &&
+      data.feeling is string && data.feeling.size() >= 1 && data.feeling.size() <= 60 &&
+      data.availableMinutes is int && data.availableMinutes >= 0 && data.availableMinutes <= 240 &&
+      (!('realLifeFactors' in data) || isValidStringArray(data.realLifeFactors, 10)) &&
+      (!('notes' in data) || (data.notes is string && data.notes.size() <= 500)) &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    function isValidActivityLog(data, userId) {
+      return data.keys().hasAll([
+        'uid', 'title', 'category', 'plannedDuration', 'actualDuration',
+        'outcome', 'effort', 'dateKey', 'createdAt'
+      ]) &&
+      data.keys().hasOnly([
+        'uid', 'title', 'category', 'plannedDuration', 'actualDuration',
+        'outcome', 'effort', 'notes', 'dateKey', 'createdAt'
+      ]) &&
+      data.uid is string && data.uid.size() <= 128 && data.uid.matches('^[a-zA-Z0-9_\\-]+$') &&
+      data.uid == request.auth.uid && data.uid == userId &&
+      data.title is string && data.title.size() >= 1 && data.title.size() <= 150 &&
+      data.category is string && data.category.size() <= 30 && data.category in ['workout', 'walk', 'mobility', 'everyday', 'recovery', 'family', 'adventure'] &&
+      data.plannedDuration is int && data.plannedDuration >= 0 && data.plannedDuration <= 300 &&
+      data.actualDuration is int && data.actualDuration >= 0 && data.actualDuration <= 300 &&
+      data.outcome is string && data.outcome.size() <= 40 && data.outcome in ['completed_as_planned', 'did_less', 'did_more', 'did_different', 'rested_instead', 'couldnt_do_it'] &&
+      data.effort is string && data.effort.size() <= 30 && data.effort in ['gentle', 'moderate', 'steady', 'restorative'] &&
+      (!('notes' in data) || (data.notes is string && data.notes.size() <= 500)) &&
+      data.dateKey is string && data.dateKey.size() >= 1 && data.dateKey.size() <= 20 &&
+      data.createdAt is timestamp;
+    }
+
+    function isValidFoodLog(data, userId) {
+      return data.keys().hasAll([
+        'uid', 'mealType', 'description', 'dateKey', 'createdAt'
+      ]) &&
+      data.keys().hasOnly([
+        'uid', 'mealType', 'description', 'items', 'notes', 'dateKey', 'createdAt'
+      ]) &&
+      data.uid is string && data.uid.size() <= 128 && data.uid.matches('^[a-zA-Z0-9_\\-]+$') &&
+      data.uid == request.auth.uid && data.uid == userId &&
+      data.mealType is string && data.mealType.size() <= 20 && data.mealType in ['breakfast', 'lunch', 'dinner', 'snack'] &&
+      data.description is string && data.description.size() >= 1 && data.description.size() <= 300 &&
+      (!('items' in data) || isValidStringArray(data.items, 15)) &&
+      (!('notes' in data) || (data.notes is string && data.notes.size() <= 300)) &&
+      data.dateKey is string && data.dateKey.size() >= 1 && data.dateKey.size() <= 20 &&
+      data.createdAt is timestamp;
+    }
+
+    function isValidMedicationReminder(data, userId) {
+      return data.keys().hasAll([
+        'uid', 'medicationName', 'reminderTime', 'scheduleLabel', 'takenToday', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'uid', 'medicationName', 'reminderTime', 'scheduleLabel', 'notes', 'takenToday', 'createdAt', 'updatedAt'
+      ]) &&
+      data.uid is string && data.uid.size() <= 128 && data.uid.matches('^[a-zA-Z0-9_\\-]+$') &&
+      data.uid == request.auth.uid && data.uid == userId &&
+      data.medicationName is string && data.medicationName.size() >= 1 && data.medicationName.size() <= 120 &&
+      data.reminderTime is string && data.reminderTime.size() >= 1 && data.reminderTime.size() <= 20 &&
+      data.scheduleLabel is string && data.scheduleLabel.size() >= 1 && data.scheduleLabel.size() <= 100 &&
+      (!('notes' in data) || (data.notes is string && data.notes.size() <= 250)) &&
+      data.takenToday is bool &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    function isValidCalendarEvent(data, userId) {
+      return data.keys().hasAll([
+        'uid', 'title', 'dateKey', 'startTime', 'durationMinutes', 'eventType', 'createdAt'
+      ]) &&
+      data.keys().hasOnly([
+        'uid', 'title', 'dateKey', 'startTime', 'durationMinutes', 'eventType', 'createdAt'
+      ]) &&
+      data.uid is string && data.uid.size() <= 128 && data.uid.matches('^[a-zA-Z0-9_\\-]+$') &&
+      data.uid == request.auth.uid && data.uid == userId &&
+      data.title is string && data.title.size() >= 1 && data.title.size() <= 150 &&
+      data.dateKey is string && data.dateKey.size() >= 1 && data.dateKey.size() <= 20 &&
+      data.startTime is string && data.startTime.size() >= 1 && data.startTime.size() <= 20 &&
+      data.durationMinutes is int && data.durationMinutes >= 5 && data.durationMinutes <= 480 &&
+      data.eventType is string && data.eventType.size() <= 30 && data.eventType in ['workout', 'walk', 'recovery', 'family', 'busy_block'] &&
+      data.createdAt is timestamp;
+    }
+
+    // 4. Collection Rules
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if isOwner(userId) && resource.data.uid == request.auth.uid;
+      allow create: if isOwner(userId) && isValidId(userId) && isValidUserProfile(incoming(), userId) &&
+        incoming().createdAt == request.time && incoming().updatedAt == request.time;
+      allow update: if isOwner(userId) && isValidId(userId) && isValidUserProfile(incoming(), userId) &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'name', 'age', 'preferredUnits', 'locationArea', 'timezone',
+          'goals', 'healthConsiderations', 'equipment', 'favouriteActivities',
+          'dislikedActivities', 'indoorOutdoorPreference', 'musicPreference',
+          'preferredDuration', 'socialPreference', 'learnedPreferences',
+          'allergies', 'foodBudget', 'householdSize', 'subscriptionTier',
+          'onboardingCompleted', 'updatedAt'
+        ]);
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      match /checkIns/{checkInId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(checkInId) &&
+          exists(/databases/$(database)/documents/users/$(userId));
+        allow list: if isOwner(userId) && resource.data.uid == request.auth.uid;
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(checkInId) &&
+          isValidDailyCheckIn(incoming(), userId) &&
+          incoming().createdAt == request.time && incoming().updatedAt == request.time &&
+          exists(/databases/$(database)/documents/users/$(userId));
+        allow update: if isOwner(userId) && isValidId(userId) && isValidId(checkInId) &&
+          isValidDailyCheckIn(incoming(), userId) &&
+          incoming().uid == existing().uid &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'feeling', 'availableMinutes', 'realLifeFactors', 'notes', 'updatedAt'
+          ]) &&
+          exists(/databases/$(database)/documents/users/$(userId));
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(checkInId) &&
+          exists(/databases/$(database)/documents/users/$(userId));
+      }
+
+      match /activityLogs/{logId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(logId) &&
+          exists(/databases/$(database)/documents/users/$(userId));
+        allow list: if isOwner(userId) && resource.data.uid == request.auth.uid;
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(logId) &&
+          isValidActivityLog(incoming(), userId) &&
+          incoming().createdAt == request.time &&
+          exists(/databases/$(database)/documents/users/$(userId));
+        allow update: if isOwner(userId) && isValidId(userId) && isValidId(logId) &&
+          isValidActivityLog(incoming(), userId) &&
+          incoming().uid == existing().uid &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'title', 'category', 'plannedDuration', 'actualDuration', 'outcome', 'effort', 'notes'
+          ]) &&
+          exists(/databases/$(database)/documents/users/$(userId));
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(logId) &&
+          exists(/databases/$(database)/documents/users/$(userId));
+      }
+
+      match /foodLogs/{foodId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(foodId) &&
+          exists(/databases/$(database)/documents/users/$(userId));
+        allow list: if isOwner(userId) && resource.data.uid == request.auth.uid;
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(foodId) &&
+          isValidFoodLog(incoming(), userId) &&
+          incoming().createdAt == request.time &&
+          exists(/databases/$(database)/documents/users/$(userId));
+        allow update: if isOwner(userId) && isValidId(userId) && isValidId(foodId) &&
+          isValidFoodLog(incoming(), userId) &&
+          incoming().uid == existing().uid &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'mealType', 'description', 'items', 'notes'
+          ]) &&
+          exists(/databases/$(database)/documents/users/$(userId));
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(foodId) &&
+          exists(/databases/$(database)/documents/users/$(userId));
+      }
+
+      match /medications/{medId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(medId) &&
+          exists(/databases/$(database)/documents/users/$(userId));
+        allow list: if isOwner(userId) && resource.data.uid == request.auth.uid;
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(medId) &&
+          isValidMedicationReminder(incoming(), userId) &&
+          incoming().createdAt == request.time && incoming().updatedAt == request.time &&
+          exists(/databases/$(database)/documents/users/$(userId));
+        allow update: if isOwner(userId) && isValidId(userId) && isValidId(medId) &&
+          isValidMedicationReminder(incoming(), userId) &&
+          incoming().uid == existing().uid &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'medicationName', 'reminderTime', 'scheduleLabel', 'notes', 'takenToday', 'updatedAt'
+          ]) &&
+          exists(/databases/$(database)/documents/users/$(userId));
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(medId) &&
+          exists(/databases/$(database)/documents/users/$(userId));
+      }
+
+      match /calendarEvents/{eventId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(eventId) &&
+          exists(/databases/$(database)/documents/users/$(userId));
+        allow list: if isOwner(userId) && resource.data.uid == request.auth.uid;
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(eventId) &&
+          isValidCalendarEvent(incoming(), userId) &&
+          incoming().createdAt == request.time &&
+          exists(/databases/$(database)/documents/users/$(userId));
+        allow update: if isOwner(userId) && isValidId(userId) && isValidId(eventId) &&
+          isValidCalendarEvent(incoming(), userId) &&
+          incoming().uid == existing().uid &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'title', 'dateKey', 'startTime', 'durationMinutes', 'eventType'
+          ]) &&
+          exists(/databases/$(database)/documents/users/$(userId));
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(eventId) &&
+          exists(/databases/$(database)/documents/users/$(userId));
+      }
+    }
+  }
+}

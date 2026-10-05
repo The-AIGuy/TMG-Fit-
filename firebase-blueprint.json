@@ -1,0 +1,391 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile, goals, equipment, preferences, health considerations, and subscription tier.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "age": {
+          "type": "integer"
+        },
+        "preferredUnits": {
+          "type": "string",
+          "enum": ["metric", "imperial"],
+          "maxLength": 20
+        },
+        "locationArea": {
+          "type": "string",
+          "maxLength": 150
+        },
+        "timezone": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "goals": {
+          "type": "array",
+          "description": "Up to 10 selected sustainable fitness goals"
+        },
+        "healthConsiderations": {
+          "type": "array",
+          "description": "Up to 10 voluntary health considerations"
+        },
+        "equipment": {
+          "type": "array",
+          "description": "Up to 15 available equipment items"
+        },
+        "favouriteActivities": {
+          "type": "array",
+          "description": "Up to 15 favourite activities"
+        },
+        "dislikedActivities": {
+          "type": "array",
+          "description": "Up to 15 disliked activities"
+        },
+        "indoorOutdoorPreference": {
+          "type": "string",
+          "enum": ["indoor", "outdoor", "both"],
+          "maxLength": 20
+        },
+        "musicPreference": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "preferredDuration": {
+          "type": "integer"
+        },
+        "socialPreference": {
+          "type": "string",
+          "enum": ["solo", "group", "family", "flexible"],
+          "maxLength": 20
+        },
+        "learnedPreferences": {
+          "type": "array",
+          "description": "Up to 20 learned preferences from user feedback"
+        },
+        "allergies": {
+          "type": "array",
+          "description": "Up to 15 food allergies or intolerances"
+        },
+        "foodBudget": {
+          "type": "string",
+          "enum": ["low", "moderate", "flexible"],
+          "maxLength": 20
+        },
+        "householdSize": {
+          "type": "integer"
+        },
+        "subscriptionTier": {
+          "type": "string",
+          "enum": ["free", "pro", "pro_plus"],
+          "maxLength": 20
+        },
+        "onboardingCompleted": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uid",
+        "name",
+        "preferredUnits",
+        "indoorOutdoorPreference",
+        "preferredDuration",
+        "subscriptionTier",
+        "onboardingCompleted",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "DailyCheckIn": {
+      "title": "DailyCheckIn",
+      "description": "Daily check-in capturing how the user feels, available duration, and real life barriers.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "dateKey": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "feeling": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "availableMinutes": {
+          "type": "integer"
+        },
+        "realLifeFactors": {
+          "type": "array",
+          "description": "Up to 10 selected Real Life Mode barriers"
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uid",
+        "dateKey",
+        "feeling",
+        "availableMinutes",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ActivityLog": {
+      "title": "ActivityLog",
+      "description": "Planned vs actual activity log, everyday movement, or recovery day entry.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 150
+        },
+        "category": {
+          "type": "string",
+          "enum": ["workout", "walk", "mobility", "everyday", "recovery", "family", "adventure"],
+          "maxLength": 30
+        },
+        "plannedDuration": {
+          "type": "integer"
+        },
+        "actualDuration": {
+          "type": "integer"
+        },
+        "outcome": {
+          "type": "string",
+          "enum": ["completed_as_planned", "did_less", "did_more", "did_different", "rested_instead", "couldnt_do_it"],
+          "maxLength": 40
+        },
+        "effort": {
+          "type": "string",
+          "enum": ["gentle", "moderate", "steady", "restorative"],
+          "maxLength": 30
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "dateKey": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uid",
+        "title",
+        "category",
+        "plannedDuration",
+        "actualDuration",
+        "outcome",
+        "effort",
+        "dateKey",
+        "createdAt"
+      ]
+    },
+    "FoodLog": {
+      "title": "FoodLog",
+      "description": "Supportive food log entry from natural language, photo, or meal plan.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "mealType": {
+          "type": "string",
+          "enum": ["breakfast", "lunch", "dinner", "snack"],
+          "maxLength": 20
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300
+        },
+        "items": {
+          "type": "array",
+          "description": "Up to 15 parsed food items"
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "dateKey": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uid",
+        "mealType",
+        "description",
+        "dateKey",
+        "createdAt"
+      ]
+    },
+    "MedicationReminder": {
+      "title": "MedicationReminder",
+      "description": "User-entered medication reminder schedule (non-medical reminder tool only).",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "medicationName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "reminderTime": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "scheduleLabel": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 250
+        },
+        "takenToday": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uid",
+        "medicationName",
+        "reminderTime",
+        "scheduleLabel",
+        "takenToday",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "CalendarEvent": {
+      "title": "CalendarEvent",
+      "description": "Scheduled activity, walk, recovery block, or busy life block.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 150
+        },
+        "dateKey": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "startTime": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "durationMinutes": {
+          "type": "integer"
+        },
+        "eventType": {
+          "type": "string",
+          "enum": ["workout", "walk", "recovery", "family", "busy_block"],
+          "maxLength": 30
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uid",
+        "title",
+        "dateKey",
+        "startTime",
+        "durationMinutes",
+        "eventType",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Primary private user profile document owned strictly by userId."
+    },
+    "/users/{userId}/checkIns/{checkInId}": {
+      "schema": { "$ref": "#/entities/DailyCheckIn" },
+      "description": "Daily check-in records under the user's private profile."
+    },
+    "/users/{userId}/activityLogs/{logId}": {
+      "schema": { "$ref": "#/entities/ActivityLog" },
+      "description": "Planned and actual activity logs under the user's private profile."
+    },
+    "/users/{userId}/foodLogs/{foodId}": {
+      "schema": { "$ref": "#/entities/FoodLog" },
+      "description": "Supportive food logs under the user's private profile."
+    },
+    "/users/{userId}/medications/{medId}": {
+      "schema": { "$ref": "#/entities/MedicationReminder" },
+      "description": "User-managed medication reminder items."
+    },
+    "/users/{userId}/calendarEvents/{eventId}": {
+      "schema": { "$ref": "#/entities/CalendarEvent" },
+      "description": "User-managed calendar events and schedule blocks."
+    }
+  }
+}
